@@ -3,3 +3,9 @@ variable "region" {
   type        = string
   default     = "us-east-1"
 }
+
+variable "portal_version" {
+  description = "Version del portal que se despliega"
+  type        = string
+  default     = "v1"
+}
