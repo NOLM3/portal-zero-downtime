@@ -6,9 +6,9 @@ mkdir -p /opt/portal
 cat > /opt/portal/index.html << HTML
 <!DOCTYPE html>
 <html>
-<head><meta charset="utf-8"><title>Portal ${portal_version}</title></head>
+<head><meta charset="utf-8"><title>NOLME WEB STATION ${portal_version}</title></head>
 <body>
-<h1>Portal NexoAndes</h1>
+<h1>NOLME WEB STATION</h1>
 <p>Version: ${portal_version}</p>
 <p>Servidor: $(hostname)</p>
 </body>
@@ -20,7 +20,7 @@ echo "${portal_version}" > /opt/portal/version
 
 cat > /etc/systemd/system/portal.service << UNIT
 [Unit]
-Description=Portal NexoAndes
+Description=NOLME WEB STATION
 After=network.target
 
 [Service]
@@ -34,3 +34,4 @@ UNIT
 
 systemctl daemon-reload
 systemctl enable --now portal
+EOF
