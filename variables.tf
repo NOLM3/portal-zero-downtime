@@ -7,5 +7,5 @@ variable "region" {
 variable "portal_version" {
   description = "Version del portal que se despliega"
   type        = string
-  default     = "v2"
+  default     = "v1"
 }
