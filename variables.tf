@@ -4,6 +4,12 @@ variable "region" {
   default     = "us-east-1"
 }
 
+variable "azure_location" {
+  description = "Region de Azure donde se despliega el portal"
+  type        = string
+  default     = "eastus2"
+}
+
 variable "portal_version" {
   description = "Version del portal que se despliega"
   type        = string
