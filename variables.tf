@@ -7,7 +7,7 @@ variable "region" {
 variable "azure_location" {
   description = "Region de Azure donde se despliega el portal"
   type        = string
-  default     = "eastus2"
+  default     = "northcentralus"
 }
 
 variable "portal_version" {
