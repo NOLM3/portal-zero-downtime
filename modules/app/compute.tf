@@ -26,12 +26,20 @@ resource "aws_instance" "web" {
   }
 
   tags = {
-    Name          = "${var.name}-web-${count.index + 1}"
-    PortalVersion = var.portal_version
+    Name           = "${var.name}-web-${count.index + 1}"
+    PortalVersion  = var.portal_version
+    TargetGroupArn = aws_lb_target_group.this.arn
   }
 
   lifecycle {
     create_before_destroy = true
+  }
+
+  # Gate de salida: antes de apagar el servidor, esperar a que el ALB
+  # termine de sacarlo y de drenar sus visitas.
+  provisioner "local-exec" {
+    when    = destroy
+    command = "aws elbv2 wait target-deregistered --region ${self.region} --target-group-arn ${self.tags["TargetGroupArn"]} --targets Id=${self.id},Port=80"
   }
 }
 
@@ -44,5 +52,11 @@ resource "aws_lb_target_group_attachment" "web" {
 
   lifecycle {
     create_before_destroy = true
+  }
+
+  # Gate de entrada: despues de inscribir el servidor nuevo, esperar a que
+  # el ALB lo marque healthy antes de sacar al viejo.
+  provisioner "local-exec" {
+    command = "aws elbv2 wait target-in-service --region ${self.region} --target-group-arn ${self.target_group_arn} --targets Id=${self.target_id},Port=80"
   }
 }
