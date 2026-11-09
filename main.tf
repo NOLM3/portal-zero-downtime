@@ -17,6 +17,7 @@ module "app" {
 
 module "app_azure" {
   source = "./modules/app_azure"
+  count  = var.enable_azure ? 1 : 0
 
   name           = "portal"
   location       = var.azure_location
