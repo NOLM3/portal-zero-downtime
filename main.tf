@@ -12,16 +12,5 @@ module "app" {
   name           = "portal"
   vpc_id         = module.network.vpc_id
   subnet_ids     = module.network.public_subnet_ids
-  portal_version = var.portal_version
-}
-
-module "app_azure" {
-  source = "./modules/app_azure"
-  count  = var.enable_azure ? 1 : 0
-
-  name           = "portal"
-  location       = var.azure_location
-  portal_version = var.portal_version
-  vm_size        = "Standard_B2ats_v2"
-  instance_count = 1
+  portal_version = local.portal_version
 }

@@ -1,0 +1,83 @@
+name: terraform
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+# Nunca dos ejecuciones al mismo tiempo sobre la misma infraestructura.
+concurrency:
+  group: terraform
+  cancel-in-progress: false
+
+env:
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
+  AWS_REGION: us-east-1
+  TF_IN_AUTOMATION: "true"
+
+jobs:
+  revisiones:
+    name: Revisiones
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: hashicorp/setup-terraform@v4
+
+      - name: Formato
+        run: terraform fmt -check -recursive
+
+      - name: Init sin backend
+        run: terraform init -backend=false -input=false
+
+      - name: Validacion
+        run: terraform validate
+
+  plan:
+    name: Plan
+    needs: revisiones
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: hashicorp/setup-terraform@v4
+
+      - name: Init
+        run: terraform init -input=false
+
+      - name: Plan
+        run: terraform plan -input=false -out=tfplan
+
+      - name: Guardar el plan
+        uses: actions/upload-artifact@v6
+        with:
+          name: tfplan
+          path: tfplan
+
+  apply:
+    name: Apply
+    needs: plan
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: produccion
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: hashicorp/setup-terraform@v4
+
+      - name: Init
+        run: terraform init -input=false
+
+      - name: Descargar el plan aprobado
+        uses: actions/download-artifact@v7
+        with:
+          name: tfplan
+
+      - name: Apply
+        run: terraform apply -input=false tfplan
