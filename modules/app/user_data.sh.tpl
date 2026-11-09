@@ -34,4 +34,3 @@ UNIT
 
 systemctl daemon-reload
 systemctl enable --now portal
-EOF
