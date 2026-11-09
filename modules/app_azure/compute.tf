@@ -67,7 +67,42 @@ resource "azurerm_linux_virtual_machine" "web" {
     portal_version = var.portal_version
   }))
 
+  # La maquina se crea despues de quedar inscrita en el balanceador,
+  # para que el gate de entrada pueda verla responder a traves de el.
+  depends_on = [
+    azurerm_network_interface_backend_address_pool_association.web,
+    azurerm_lb_rule.http,
+  ]
+
   lifecycle {
     create_before_destroy = true
+  }
+
+  # Gate de entrada: consultar el portal a traves del balanceador hasta
+  # recibir la version nueva. Maximo 10 minutos (120 intentos de 5 s).
+  provisioner "local-exec" {
+    command = <<-EOT
+      for i in $(seq 1 120); do
+        v=$(curl -s -m 3 http://${azurerm_public_ip.lb.ip_address}/version)
+        if [ "$v" = "${var.portal_version}" ]; then
+          echo "Gate de entrada OK: el balanceador responde ${var.portal_version}"
+          exit 0
+        fi
+        sleep 5
+      done
+      echo "Gate de entrada FALLIDO: ${var.portal_version} no respondio a tiempo"
+      exit 1
+    EOT
+  }
+
+  # Gate de salida: hacer fallar el health probe de la maquina vieja,
+  # esperar a que el balanceador la saque y terminen sus visitas, y recien
+  # ahi dejar que Terraform la borre.
+  provisioner "local-exec" {
+    when    = destroy
+    command = <<-EOT
+      az vm run-command invoke --resource-group ${self.resource_group_name} --name ${self.name} --command-id RunShellScript --scripts "rm -f /opt/portal/health" --output none
+      sleep 30
+    EOT
   }
 }
